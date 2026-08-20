@@ -1079,15 +1079,20 @@ function NeverwinLib:CreateWindow(config)
         clone.Parent = WorldModel
         local root = clone:FindFirstChild("HumanoidRootPart") or clone:FindFirstChild("Torso") or clone:FindFirstChild("UpperTorso") or clone.PrimaryPart
 
-        if root then
+      if root then
+            -- Adicionado * CFrame.Angles(0, math.pi, 0) para girar 180° de frente para a câmera
             if clone.PrimaryPart then
-                clone:SetPrimaryPartCFrame(CFrame.new(0, 0, 0))
+                clone:SetPrimaryPartCFrame(CFrame.new(0, 0, 0) * CFrame.Angles(0, math.pi, 0))
             else
-                root.CFrame = CFrame.new(0, 0, 0)
+                root.CFrame = CFrame.new(0, 0, 0) * CFrame.Angles(0, math.pi, 0)
             end
             local targetPos = root.Position + Vector3.new(0, -0.15, 0)
             PreviewCamera.CFrame = CFrame.lookAt(Vector3.new(0, 0.05, 5.5), targetPos)
         end
+
+        local isRotating = false
+        local lastMouseX = 0
+        local currentAngle = math.pi -- Inicia o ângulo do mouse em 180° (math.pi) para a rotação continuar suave
 
         local isRotating = false
         local lastMouseX = 0
