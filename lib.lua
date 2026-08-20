@@ -1,4 +1,4 @@
--- [[ NEVERWIN UI LIBRARY - CORE MODULE (ULTIMATE FIXED) ]] --
+-- [[ NEVERWIN UI LIBRARY - CORE MODULE ]] --
 -- Exploit Environments & Optimizations --
 local cloneref = cloneref or function(i) return i end
 local clonefunction = clonefunction or function(...) return ... end
@@ -66,13 +66,6 @@ local NeverwinLib = {
     Windows = {},
     DragBlacklist = {},
     GLOBAL_ENVIRONMENT = {},
-    ESP_Config = {
-        Enabled = true,
-        Box = true,
-        Name = true,
-        Health = true,
-        Distance = true,
-    }
 }
 NeverwinLib.__index = NeverwinLib
 
@@ -1004,7 +997,7 @@ function NeverwinLib:CreateWindow(config)
     ContentContainer.BackgroundTransparency = 1
     ContentContainer.Parent = RightPanel
 
-    -- ================= 3D PREVIEW (300x540, FOV 80) =================
+    -- ================= 3D PREVIEW (300x540, FOV 80, LIMPO SEM ESP INTERNO) =================
     local PreviewWindow = Instance.new("Frame")
     PreviewWindow.Name = "PlayerPreview3D"
     PreviewWindow.Size = UDim2.new(0, 300, 0, 540)
@@ -1067,87 +1060,7 @@ function NeverwinLib:CreateWindow(config)
     Viewport.CurrentCamera = PreviewCamera
     PreviewCamera.Parent = Viewport
 
-    local PreviewESPOverlay = Instance.new("Frame")
-    PreviewESPOverlay.Size = UDim2.new(1, 0, 1, 0)
-    PreviewESPOverlay.BackgroundTransparency = 1
-    PreviewESPOverlay.ZIndex = 10
-    PreviewESPOverlay.Parent = Viewport
-
-    local PBox = Instance.new("Frame")
-    PBox.BackgroundTransparency = 1
-    PBox.BorderSizePixel = 0
-    PBox.Visible = false
-    PBox.ZIndex = 11
-    PBox.Parent = PreviewESPOverlay
-
-    local PBoxStroke = Instance.new("UIStroke")
-    PBoxStroke.Color = THEME.AccentBlue
-    PBoxStroke.Thickness = 1
-    PBoxStroke.Parent = PBox
-
-    local PName = Instance.new("TextLabel")
-    PName.BackgroundTransparency = 1
-    PName.Text = LocalPlayer.DisplayName
-    PName.TextColor3 = Color3.fromRGB(255, 255, 255)
-    PName.Font = Enum.Font.GothamBold
-    PName.TextSize = 11
-    PName.TextStrokeTransparency = 0.4
-    PName.TextStrokeColor3 = Color3.fromRGB(0, 0, 0)
-    PName.TextXAlignment = Enum.TextXAlignment.Center
-    PName.Visible = false
-    PName.ZIndex = 12
-    PName.Parent = PreviewESPOverlay
-
-    local PHealthBg = Instance.new("Frame")
-    PHealthBg.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
-    PHealthBg.BorderSizePixel = 0
-    PHealthBg.Visible = false
-    PHealthBg.ZIndex = 11
-    PHealthBg.Parent = PreviewESPOverlay
-
-    local PHealthBar = Instance.new("Frame")
-    PHealthBar.BackgroundColor3 = Color3.fromRGB(0, 230, 120)
-    PHealthBar.BorderSizePixel = 0
-    PHealthBar.Size = UDim2.new(1, 0, 1, 0)
-    PHealthBar.ZIndex = 12
-    PHealthBar.Parent = PHealthBg
-
-    local PDistance = Instance.new("TextLabel")
-    PDistance.BackgroundTransparency = 1
-    PDistance.Text = "24 studs"
-    PDistance.TextColor3 = Color3.fromRGB(200, 200, 200)
-    PDistance.Font = Enum.Font.GothamMedium
-    PDistance.TextSize = 10
-    PDistance.TextStrokeTransparency = 0.4
-    PDistance.TextStrokeColor3 = Color3.fromRGB(0, 0, 0)
-    PDistance.TextXAlignment = Enum.TextXAlignment.Center
-    PDistance.Visible = false
-    PDistance.ZIndex = 12
-    PDistance.Parent = PreviewESPOverlay
-
-    local function WorldToPreviewViewport(worldPos)
-        local camCFrame = PreviewCamera.CFrame
-        local pCam = camCFrame:PointToObjectSpace(worldPos)
-        local zDepth = -pCam.Z
-        if zDepth <= 0.1 then return Vector2.new(0, 0), false end
-
-        local vpSize = Viewport.AbsoluteSize
-        if vpSize.X <= 0 or vpSize.Y <= 0 then return Vector2.new(0, 0), false end
-
-        local fovRad = math.rad(PreviewCamera.FieldOfView / 2)
-        local hHalf = zDepth * math.tan(fovRad)
-        local aspectRatio = vpSize.X / vpSize.Y
-        local wHalf = hHalf * aspectRatio
-
-        local xNdc = pCam.X / wHalf
-        local yNdc = pCam.Y / hHalf
-
-        local screenX = ((xNdc + 1) / 2) * vpSize.X
-        local screenY = ((1 - yNdc) / 2) * vpSize.Y
-
-        return Vector2.new(screenX, screenY), true
-    end
-
+    -- RENDERIZAÇÃO DO AVATAR 3D (LIMPO)
     task.spawn(function()
         local character = LocalPlayer.Character or LocalPlayer.CharacterAdded:Wait()
         character.Archivable = true
@@ -1205,77 +1118,9 @@ function NeverwinLib:CreateWindow(config)
                 end
             end
         end)
-
-        RunService.RenderStepped:Connect(function()
-            local cfg = NeverwinLib.ESP_Config
-            if not clone or not clone.Parent or not cfg or not cfg.Enabled then
-                PBox.Visible = false
-                PName.Visible = false
-                PHealthBg.Visible = false
-                PDistance.Visible = false
-                return
-            end
-
-            local head = clone:FindFirstChild("Head")
-            local headY = head and (head.Position.Y + (head.Size.Y * 0.5) + 0.4) or (root.Position.Y + 2.5)
-            local rootY = root.Position.Y
-            local feetY = rootY - 2.9
-
-            local topWorld = Vector3.new(root.Position.X, headY, root.Position.Z)
-            local botWorld = Vector3.new(root.Position.X, feetY, root.Position.Z)
-
-            local top2D, topOk = WorldToPreviewViewport(topWorld)
-            local bot2D, botOk = WorldToPreviewViewport(botWorld)
-
-            if topOk and botOk then
-                local height = math.abs(bot2D.Y - top2D.Y)
-                local width = height * 0.56
-                local posX = math.floor(top2D.X - (width / 2))
-                local posY = math.floor(top2D.Y)
-                local boxW = math.floor(width)
-                local boxH = math.floor(height)
-
-                if cfg.Box then
-                    PBox.Position = UDim2.new(0, posX, 0, posY)
-                    PBox.Size = UDim2.new(0, boxW, 0, boxH)
-                    PBox.Visible = true
-                else
-                    PBox.Visible = false
-                end
-
-                if cfg.Name then
-                    PName.Position = UDim2.new(0, posX - 30, 0, posY - 16)
-                    PName.Size = UDim2.new(0, boxW + 60, 0, 14)
-                    PName.Visible = true
-                else
-                    PName.Visible = false
-                end
-
-                if cfg.Health then
-                    PHealthBg.Position = UDim2.new(0, posX - 6, 0, posY)
-                    PHealthBg.Size = UDim2.new(0, 3, 0, boxH)
-                    PHealthBg.Visible = true
-                else
-                    PHealthBg.Visible = false
-                end
-
-                if cfg.Distance then
-                    PDistance.Position = UDim2.new(0, posX - 30, 0, posY + boxH + 3)
-                    PDistance.Size = UDim2.new(0, boxW + 60, 0, 14)
-                    PDistance.Visible = true
-                else
-                    PDistance.Visible = false
-                end
-            else
-                PBox.Visible = false
-                PName.Visible = false
-                PHealthBg.Visible = false
-                PDistance.Visible = false
-            end
-        end)
     end)
 
-    -- MÉTODOS DE CONTROLE DA JANELA & KEYBIND TOGGLE
+    -- MÉTODOS DE CONTROLE DA JANELA & KEYBIND TOGGLE (100% CORRIGIDO)
     local WindowObj = {
         Tabs = {},
         Categories = {},
@@ -1286,25 +1131,31 @@ function NeverwinLib:CreateWindow(config)
         IsVisible = true
     }
 
-    function WindowObj:Toggle(state)
+    local function SetUIVisibility(state)
         if state ~= nil then
-            self.IsVisible = state
+            WindowObj.IsVisible = state
         else
-            self.IsVisible = not self.IsVisible
+            WindowObj.IsVisible = not WindowObj.IsVisible
         end
-        ScreenGui.Enabled = self.IsVisible
+        ScreenGui.Enabled = WindowObj.IsVisible
     end
 
-    function WindowObj:SetVisible(state)
-        self:Toggle(state)
-    end
+    WindowObj.Toggle = SetUIVisibility
+    WindowObj.SetVisible = SetUIVisibility
 
-    UserInputService.InputBegan:Connect(function(input, gameProcessed)
-        if gameProcessed then return end
+    -- OUVINTE DE KEYBIND ATUALIZADO (SUPORTA RIGHTSHIFT / INSERT / QUALQUER TECLA)
+    UserInputService.InputBegan:Connect(function(input)
+        -- Ignora apenas se o usuário estiver digitando em uma caixa de texto
+        if UserInputService:GetFocusedTextBox() ~= nil then return end
+
         if MatchesKey(input, toggleKey) then
-            WindowObj:Toggle()
+            SetUIVisibility()
         end
     end)
+
+    function WindowObj:GetPreviewViewport() return Viewport end
+    function WindowObj:GetPreviewCamera() return PreviewCamera end
+    function WindowObj:GetPreviewWorldModel() return WorldModel end
 
     function WindowObj:CreateTab(categoryName, tabName, iconName)
         if not self.Categories[categoryName] then
@@ -2041,167 +1892,5 @@ function NeverwinLib:CreateWindow(config)
 
     return WindowObj
 end
-
--- ==================================================================== --
---                    IN-GAME ESP MOTOR (100% FUNCIONAL)                --
--- ==================================================================== --
-
-local InGameESP = Instance.new("Folder")
-InGameESP.Name = "Neverwin_ESP_Engine"
-InGameESP.Parent = CoreGui
-
-local PlayerBoxes = {}
-
-local function CreateESP(player)
-    if player == LocalPlayer then return end
-
-    local box = Instance.new("Frame")
-    box.BackgroundTransparency = 1
-    box.BorderSizePixel = 0
-    box.Visible = false
-    box.Parent = InGameESP
-
-    local stroke = Instance.new("UIStroke")
-    stroke.Color = THEME.AccentBlue
-    stroke.Thickness = 1
-    stroke.Parent = box
-
-    local nameLbl = Instance.new("TextLabel")
-    nameLbl.BackgroundTransparency = 1
-    nameLbl.Text = player.DisplayName or player.Name
-    nameLbl.TextColor3 = Color3.fromRGB(255, 255, 255)
-    nameLbl.Font = Enum.Font.GothamBold
-    nameLbl.TextSize = 11
-    nameLbl.TextStrokeTransparency = 0.4
-    nameLbl.TextStrokeColor3 = Color3.fromRGB(0, 0, 0)
-    nameLbl.TextXAlignment = Enum.TextXAlignment.Center
-    nameLbl.Visible = false
-    nameLbl.Parent = InGameESP
-
-    local hpBg = Instance.new("Frame")
-    hpBg.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
-    hpBg.BorderSizePixel = 0
-    hpBg.Visible = false
-    hpBg.Parent = InGameESP
-
-    local hpBar = Instance.new("Frame")
-    hpBar.BackgroundColor3 = Color3.fromRGB(0, 230, 120)
-    hpBar.BorderSizePixel = 0
-    hpBar.Size = UDim2.new(1, 0, 1, 0)
-    hpBar.Parent = hpBg
-
-    local distLbl = Instance.new("TextLabel")
-    distLbl.BackgroundTransparency = 1
-    distLbl.TextColor3 = Color3.fromRGB(200, 200, 200)
-    distLbl.Font = Enum.Font.GothamMedium
-    distLbl.TextSize = 10
-    distLbl.TextStrokeTransparency = 0.4
-    distLbl.TextStrokeColor3 = Color3.fromRGB(0, 0, 0)
-    distLbl.TextXAlignment = Enum.TextXAlignment.Center
-    distLbl.Visible = false
-    distLbl.Parent = InGameESP
-
-    PlayerBoxes[player] = {Box = box, Name = nameLbl, HealthBg = hpBg, HealthBar = hpBar, Distance = distLbl}
-end
-
-local function RemoveESP(player)
-    if PlayerBoxes[player] then
-        for _, obj in pairs(PlayerBoxes[player]) do obj:Destroy() end
-        PlayerBoxes[player] = nil
-    end
-end
-
-for _, p in ipairs(Players:GetPlayers()) do CreateESP(p) end
-Players.PlayerAdded:Connect(CreateESP)
-Players.PlayerRemoving:Connect(RemoveESP)
-
-RunService.RenderStepped:Connect(function()
-    local cfg = NeverwinLib.ESP_Config
-    if not cfg or not cfg.Enabled then
-        for _, esp in pairs(PlayerBoxes) do
-            esp.Box.Visible = false
-            esp.Name.Visible = false
-            esp.HealthBg.Visible = false
-            esp.Distance.Visible = false
-        end
-        return
-    end
-
-    for player, esp in pairs(PlayerBoxes) do
-        local char = player.Character
-        local hrp = char and char:FindFirstChild("HumanoidRootPart")
-        local hum = char and char:FindFirstChildOfClass("Humanoid")
-        local head = char and char:FindFirstChild("Head")
-
-        if char and hrp and hum and hum.Health > 0 then
-            local headY = head and (head.Position.Y + (head.Size.Y * 0.5) + 0.4) or (hrp.Position.Y + 2.5)
-            local rootY = hrp.Position.Y
-            local feetY = rootY - (hum.RigType == Enum.HumanoidRigType.R6 and 2.8 or 3.0)
-
-            local topWorld = Vector3.new(hrp.Position.X, headY, hrp.Position.Z)
-            local botWorld = Vector3.new(hrp.Position.X, feetY, hrp.Position.Z)
-
-            local topScreen, topVisible = Camera:WorldToViewportPoint(topWorld)
-            local botScreen, botVisible = Camera:WorldToViewportPoint(botWorld)
-
-            if topVisible and botVisible and topScreen.Z > 0 then
-                local height = math.abs(botScreen.Y - topScreen.Y)
-                local width = height * 0.56
-                local posX = math.floor(topScreen.X - (width / 2))
-                local posY = math.floor(topScreen.Y)
-                local boxW = math.floor(width)
-                local boxH = math.floor(height)
-
-                if cfg.Box then
-                    esp.Box.Position = UDim2.new(0, posX, 0, posY)
-                    esp.Box.Size = UDim2.new(0, boxW, 0, boxH)
-                    esp.Box.Visible = true
-                else
-                    esp.Box.Visible = false
-                end
-
-                if cfg.Name then
-                    esp.Name.Position = UDim2.new(0, posX - 40, 0, posY - 16)
-                    esp.Name.Size = UDim2.new(0, boxW + 80, 0, 14)
-                    esp.Name.Visible = true
-                else
-                    esp.Name.Visible = false
-                end
-
-                if cfg.Health then
-                    local healthPct = math.clamp(hum.Health / hum.MaxHealth, 0, 1)
-                    esp.HealthBg.Position = UDim2.new(0, posX - 6, 0, posY)
-                    esp.HealthBg.Size = UDim2.new(0, 3, 0, boxH)
-                    esp.HealthBar.Size = UDim2.new(1, 0, healthPct, 0)
-                    esp.HealthBar.Position = UDim2.new(0, 0, 1 - healthPct, 0)
-                    esp.HealthBar.BackgroundColor3 = Color3.fromRGB(255 * (1 - healthPct), 255 * healthPct, 50)
-                    esp.HealthBg.Visible = true
-                else
-                    esp.HealthBg.Visible = false
-                end
-
-                if cfg.Distance and LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart") then
-                    local dist = math.floor((hrp.Position - LocalPlayer.Character.HumanoidRootPart.Position).Magnitude)
-                    esp.Distance.Text = tostring(dist) .. " studs"
-                    esp.Distance.Position = UDim2.new(0, posX - 40, 0, posY + boxH + 3)
-                    esp.Distance.Size = UDim2.new(0, boxW + 80, 0, 14)
-                    esp.Distance.Visible = true
-                else
-                    esp.Distance.Visible = false
-                end
-            else
-                esp.Box.Visible = false
-                esp.Name.Visible = false
-                esp.HealthBg.Visible = false
-                esp.Distance.Visible = false
-            end
-        else
-            esp.Box.Visible = false
-            esp.Name.Visible = false
-            esp.HealthBg.Visible = false
-            esp.Distance.Visible = false
-        end
-    end
-end)
 
 return NeverwinLib
